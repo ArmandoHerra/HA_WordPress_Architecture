@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Step 3 - WordPress Application EC2 Auto Scaling Group
+
+Parameters:
+  VPCStackName:
+    Type: String
+  ALBStackName:
+    Type: String
+  InstanceType:
+    Type: String
+    Default: t3.medium
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+  AMIId:
+    Type: AWS::EC2::Image::Id
+    Description: AMI with WordPress pre-installed
+
+Resources:
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow web traffic from ALB
+      VpcId:
+        Fn::ImportValue: !Sub '${VPCStackName}-VPCId'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId:
+            Fn::ImportValue: !Sub '${ALBStackName}-ALBSecurityGroup'
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !Ref AMIId
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyPairName
+        SecurityGroupIds:
+          - !Ref EC2SecurityGroup
+        UserData:
+          Fn::Base64: |
+            #!/bin/bash
+            systemctl restart httpd
+
+  WordPressTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId:
+        Fn::ImportValue: !Sub '${VPCStackName}-VPCId'
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      HealthCheckPath: /
+
+  ALBListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn:
+        Fn::ImportValue: !Sub '${ALBStackName}-HTTPSListenerArn'
+      Priority: 1
+      Conditions:
+        - Field: path-pattern
+          Values: ["*"]
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref WordPressTargetGroup
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier:
+        Fn::Split:
+          - ','
+          - Fn::ImportValue: !Sub '${VPCStackName}-PrivateSubnetIds'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: "2"
+      MaxSize: "5"
+      DesiredCapacity: "2"
+      TargetGroupARNs:
+        - !Ref WordPressTargetGroup

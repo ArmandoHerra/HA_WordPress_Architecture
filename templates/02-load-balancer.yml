@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Step 2 - Application Load Balancer and Route 53 DNS
+
+Parameters:
+  VPCStackName:
+    Type: String
+    Description: Name of the VPC stack (Step 1)
+  DomainName:
+    Type: String
+    Description: Your registered Route53 domain (e.g., example.com)
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Hosted Zone ID from Route53
+
+Resources:
+  LoadBalancerSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Security Group allowing HTTP/HTTPS traffic
+      VpcId:
+        Fn::ImportValue: !Sub '${VPCStackName}-VPCId'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets:
+        - Fn::ImportValue: !Sub "${VPCStackName}-PublicSubnet1Id"
+        - Fn::ImportValue: !Sub "${VPCStackName}-PublicSubnet2Id"
+        - Fn::ImportValue: !Sub "${VPCStackName}-PublicSubnet3Id"
+      SecurityGroups:
+        - !Ref LoadBalancerSG
+      Scheme: internet-facing
+
+  HTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref SSLCertificate
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: 503
+            ContentType: text/plain
+            MessageBody: "Service temporarily unavailable."
+
+  SSLCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        HostedZoneId: !GetAtt ApplicationLoadBalancer.CanonicalHostedZoneID
+        DNSName: !GetAtt ApplicationLoadBalancer.DNSName
+
+Outputs:
+  ALBArn:
+    Value: !Ref ApplicationLoadBalancer
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBArn'
+  ALBSecurityGroup:
+    Value: !Ref LoadBalancerSG
+    Export:
+      Name: !Sub '${AWS::StackName}-ALBSecurityGroup'
+  ALBDNSName:
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+  HTTPSListenerArn:
+    Description: "ARN of the HTTPS listener"
+    Value: !Ref HTTPSListener
+    Export:
+      Name: !Sub "${AWS::StackName}-HTTPSListenerArn"
+

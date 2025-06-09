@@ -1,0 +1,5 @@
+templates:
+  - templates/**/*.yml
+regions:
+  - us-east-1
+ignore_checks: []
