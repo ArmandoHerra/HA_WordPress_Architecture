@@ -1,5 +1,5 @@
 templates:
-  - templates/**/*.yml
+  - templates/**/*.yaml
 regions:
   - us-east-1
 ignore_checks: []

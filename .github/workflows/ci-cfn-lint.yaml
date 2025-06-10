@@ -3,10 +3,10 @@ name: CloudFormation Linting
 on:
   push:
     paths:
-      - 'templates/**/*.yml'
+      - 'templates/**/*.yaml'
   pull_request:
     paths:
-      - 'templates/**/*.yml'
+      - 'templates/**/*.yaml'
 
 jobs:
   lint:
@@ -16,4 +16,4 @@ jobs:
       - name: Setup cfn-lint
         run: pip install cfn-lint
       - name: Run cfn-lint
-        run: cfn-lint templates/**/*.yml
+        run: cfn-lint templates/**/*.yaml
