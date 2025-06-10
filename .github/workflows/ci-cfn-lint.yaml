@@ -1,0 +1,19 @@
+name: CloudFormation Linting
+
+on:
+  push:
+    paths:
+      - 'templates/**/*.yml'
+  pull_request:
+    paths:
+      - 'templates/**/*.yml'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup cfn-lint
+        run: pip install cfn-lint
+      - name: Run cfn-lint
+        run: cfn-lint templates/**/*.yml

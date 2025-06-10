@@ -1,0 +1,18 @@
+name: AWS Sustainability Scan
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  sustainability-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: AWS Sustainability Scanner
+        uses: aws-actions/sustainability-scanner@v1
+        with:
+          directory: "templates"
