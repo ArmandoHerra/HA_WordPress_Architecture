@@ -10,7 +10,7 @@ INSTANCE_TYPE=${6:-t3.medium}
 
 aws cloudformation deploy \
   --stack-name "$STACK_NAME" \
-  --template-file templates/03-wordpress-app.yml \
+  --template-file templates/03-wordpress-app.yaml \
   --parameter-overrides \
     VPCStackName="$VPC_STACK" \
     ALBStackName="$ALB_STACK" \

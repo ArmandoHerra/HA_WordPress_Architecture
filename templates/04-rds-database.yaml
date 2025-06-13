@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Step 4 - Aurora MySQL DB Cluster for WordPress
+
+Parameters:
+  VPCStackName:
+    Type: String
+  DBName:
+    Type: String
+    Default: wordpress
+  DBUsername:
+    Type: String
+    Default: wpadmin
+  DBPassword:
+    Type: String
+    NoEcho: true
+  DBInstanceClass:
+    Type: String
+    Default: db.t3.large
+
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnets for Aurora MySQL
+      SubnetIds:
+        - Fn::ImportValue: !Sub "${VPCStackName}-PrivateSubnet1Id"
+        - Fn::ImportValue: !Sub "${VPCStackName}-PrivateSubnet2Id"
+        - Fn::ImportValue: !Sub "${VPCStackName}-PrivateSubnet3Id"
+
+  RDSClusterSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow MySQL access from WordPress
+      VpcId:
+        Fn::ImportValue: !Sub "${VPCStackName}-VPCId"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          CidrIp: 10.0.0.0/16
+
+  DBCluster:
+    Type: AWS::RDS::DBCluster
+    Properties:
+      Engine: aurora-mysql
+      EngineMode: provisioned
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VpcSecurityGroupIds:
+        - !Ref RDSClusterSecurityGroup
+      DatabaseName: !Ref DBName
+
+  DBInstance1:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: aurora-mysql
+      DBClusterIdentifier: !Ref DBCluster
+      DBInstanceClass: !Ref DBInstanceClass
+      PubliclyAccessible: false
+
+Outputs:
+  DBClusterEndpoint:
+    Description: Writer endpoint of the DB cluster
+    Value: !GetAtt DBCluster.Endpoint.Address
+    Export:
+      Name: !Sub "${AWS::StackName}-DBWriterEndpoint"
+
+  DBSecurityGroup:
+    Description: Security group ID
+    Value: !Ref RDSClusterSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-DBSecurityGroup"

@@ -9,7 +9,7 @@ echo "Deploying CloudFormation Stack: ${STACK_NAME}"
 
 aws cloudformation deploy \
   --stack-name "$STACK_NAME" \
-  --template-file templates/01-vpc-networking.yml \
+  --template-file templates/01-vpc-networking.yaml \
   --region "$AWS_REGION" \
   --parameter-overrides "AZs=${AZ_LIST}" \
   --capabilities CAPABILITY_NAMED_IAM

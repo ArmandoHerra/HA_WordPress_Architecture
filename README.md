@@ -24,9 +24,10 @@ The project also includes:
 ├── .env                          # Configuration values for stacks
 ├── Makefile                      # Automation entrypoint
 ├── templates/
-│   ├── 01-vpc-networking.yml     # VPC + Subnets
-│   ├── 02-load-balancer.yml      # ALB + ACM + Route53
-│   └── 03-wordpress-app.yml      # WordPress EC2 + Auto Scaling
+│   ├── 01-vpc-networking.yaml     # VPC + Subnets
+│   ├── 02-load-balancer.yaml      # ALB + ACM + Route53
+│   ├── 03-wordpress-app.yaml      # WordPress EC2 + Auto Scaling\
+│   └── 04-rds-database.yaml       # RDS Database
 ├── scripts/
 │   ├── deploy-vpc.sh
 │   ├── deploy-alb.sh

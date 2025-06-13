@@ -8,7 +8,7 @@ HOSTED_ZONE_ID=${4:?Provide Hosted Zone ID}
 
 aws cloudformation deploy \
   --stack-name "$STACK_NAME" \
-  --template-file templates/02-load-balancer.yml \
+  --template-file templates/02-load-balancer.yaml \
   --parameter-overrides \
     VPCStackName="$VPC_STACK" \
     DomainName="$DOMAIN_NAME" \

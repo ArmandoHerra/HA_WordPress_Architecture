@@ -4,7 +4,7 @@ export
 
 # Deploy Commands
 deploy-vpc:
-	./scripts/deploy-vpc.sh $(VPC_STACK) templates/01-vpc-networking.yml $(AWS_REGION)
+	./scripts/deploy-vpc.sh $(VPC_STACK) templates/01-vpc-networking.yaml $(AWS_REGION)
 
 deploy-alb:
 	./scripts/deploy-alb.sh $(ALB_STACK) $(VPC_STACK) $(DOMAIN_NAME) $(HOSTED_ZONE_ID)
@@ -12,7 +12,10 @@ deploy-alb:
 deploy-app:
 	./scripts/deploy-wordpress.sh $(APP_STACK) $(VPC_STACK) $(ALB_STACK) $(AMI_ID) $(KEY_PAIR) $(INSTANCE_TYPE)
 
-deploy-all: deploy-vpc deploy-alb deploy-app
+deploy-db:
+	./scripts/deploy-db.sh $(DB_STACK) $(VPC_STACK) $(DB_NAME) $(DB_USER) $(DB_PASSWORD) $(DB_INSTANCE_TYPE) $(AWS_REGION)
+
+deploy-all: deploy-vpc deploy-alb deploy-db deploy-app
 
 # Destroy Commands
 destroy-app:
@@ -24,8 +27,11 @@ destroy-alb:
 destroy-vpc:
 	./scripts/destroy-vpc.sh $(VPC_STACK) $(AWS_REGION)
 
-destroy-all: destroy-app destroy-alb destroy-vpc
+destroy-db:
+	./scripts/destroy-db.sh $(DB_STACK) $(AWS_REGION)
+
+destroy-all: destroy-app destroy-db destroy-alb destroy-vpc
 
 # Lint
 lint:
-	cfn-lint templates/*.yml
+	cfn-lint templates/*.yaml
